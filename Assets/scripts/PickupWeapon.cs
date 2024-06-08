@@ -21,13 +21,13 @@ public class PickupWeapon : MonoBehaviour
 
             if (Input.GetKeyDown(KeyCode.E))
             {
-                // Делаем оружие дочерним объектом руки игрока
-                Transform handTransform = player.transform.Find("Hand");
-                if (handTransform != null)
+                Transform weaponHolder = player.transform.Find("Main Camera/WeaponHolder");
+                if (weaponHolder != null)
                 {
-                    transform.SetParent(handTransform);
-                    transform.localPosition = Vector3.zero;
-                    transform.localRotation = Quaternion.identity;
+                    transform.SetParent(weaponHolder);
+                    transform.localPosition = new Vector3(0f, -0.5f, 2); // Позиция относительно держателя
+                    transform.localRotation = Quaternion.Euler(0, 0, 0); // Поворот относительно держателя
+                    transform.localScale = new Vector3(0.5f, 0.5f, 0.5f); // Установка масштаба оружия
 
                     // Отключаем коллайдеры и физику для оружия
                     Collider weaponCollider = GetComponent<Collider>();
@@ -62,6 +62,7 @@ public class PickupWeapon : MonoBehaviour
         {
             canPickup = true;
             player = other.gameObject;
+            pickupText.text = "";
         }
     }
 

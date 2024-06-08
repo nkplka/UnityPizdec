@@ -13,13 +13,13 @@ public class PlayerController : MonoBehaviour
     public float maximumY = 60f;
     public float smoothTime = 0.1f;
     public Transform cameraTransform;
-    public Transform weaponTransform; // Добавьте переменную для оружия
+    public Transform weaponTransform;
 
     public float maxStamina = 100f;
     private float currentStamina;
     public float staminaRegenRate = 5f;
     public float staminaUsageRate = 10f;
-    public float minStaminaForSprint = 50f; // Минимальный уровень стамины для начала спринта
+    public float minStaminaForSprint = 50f;
     public Text staminaText;
     public Text speedText;
 
@@ -48,68 +48,13 @@ public class PlayerController : MonoBehaviour
 
     void Update()
     {
-        // Mouse look
         MouseLook();
-
-        // Sprint
-        if (Input.GetKey(KeyCode.LeftShift))
-        {
-            if (currentStamina > (maxStamina * minStaminaForSprint / 100))
-            {
-                canSprint = true;
-            }
-
-            if (canSprint && currentStamina > 0)
-            {
-                isSprinting = true;
-                UseStamina(staminaUsageRate * Time.deltaTime);
-            }
-            else
-            {
-                isSprinting = false;
-            }
-        }
-        else
-        {
-            isSprinting = false;
-            canSprint = false;
-        }
-
-        // Regenerate stamina
-        if (currentStamina < maxStamina && !isSprinting)
-        {
-            currentStamina += staminaRegenRate * Time.deltaTime;
-            currentStamina = Mathf.Clamp(currentStamina, 0, maxStamina);
-        }
-
-        // Update stamina text UI
-        if (staminaText != null)
-        {
-            staminaText.text = $"{(currentStamina / maxStamina) * 100:0}%";
-        }
-
-        // Update speed text UI
-        if (speedText != null)
-        {
-            float horizontalSpeed = new Vector3(rb.velocity.x, 0, rb.velocity.z).magnitude;
-            speedText.text = $"Speed: {horizontalSpeed:0.0} m/s";
-
-            // Debugging output
-            Debug.Log("Horizontal Speed: " + horizontalSpeed);
-            Debug.Log("Rigidbody Velocity: " + rb.velocity);
-        }
-
-        // Update weapon position and rotation
-        if (weaponTransform != null)
-        {
-            weaponTransform.position = cameraTransform.position + cameraTransform.forward * 0.5f + cameraTransform.right * 0.2f;
-            weaponTransform.rotation = cameraTransform.rotation;
-        }
+        HandleSprinting();
+        UpdateUI();
     }
 
     void FixedUpdate()
     {
-        // Movement
         MovePlayer();
     }
 
@@ -134,9 +79,41 @@ public class PlayerController : MonoBehaviour
         float currentSpeed = isSprinting ? sprintSpeed : speed;
 
         Vector3 move = cameraTransform.right * moveX + cameraTransform.forward * moveZ;
-        move.y = 0; // Убедимся, что движение только по плоскости
+        move.y = 0;
 
         rb.velocity = move * currentSpeed;
+    }
+
+    void HandleSprinting()
+    {
+        if (Input.GetKey(KeyCode.LeftShift))
+        {
+            if (currentStamina > (maxStamina * minStaminaForSprint / 100))
+            {
+                canSprint = true;
+            }
+
+            if (canSprint && currentStamina > 0)
+            {
+                isSprinting = true;
+                UseStamina(staminaUsageRate * Time.deltaTime);
+            }
+            else
+            {
+                isSprinting = false;
+            }
+        }
+        else
+        {
+            isSprinting = false;
+            canSprint = false;
+        }
+
+        if (currentStamina < maxStamina && !isSprinting)
+        {
+            currentStamina += staminaRegenRate * Time.deltaTime;
+            currentStamina = Mathf.Clamp(currentStamina, 0, maxStamina);
+        }
     }
 
     void UseStamina(float amount)
@@ -144,7 +121,6 @@ public class PlayerController : MonoBehaviour
         currentStamina -= amount;
         currentStamina = Mathf.Clamp(currentStamina, 0, maxStamina);
 
-        // Отключаем спринт, если стамина достигает 0
         if (currentStamina <= 0)
         {
             isSprinting = false;
@@ -152,9 +128,22 @@ public class PlayerController : MonoBehaviour
         }
     }
 
+    void UpdateUI()
+    {
+        if (staminaText != null)
+        {
+            staminaText.text = $"{(currentStamina / maxStamina) * 100:0}%";
+        }
+
+        if (speedText != null)
+        {
+            float horizontalSpeed = new Vector3(rb.velocity.x, 0, rb.velocity.z).magnitude;
+            speedText.text = $"Speed: {horizontalSpeed:0.0} m/s";
+        }
+    }
+
     void OnCollisionStay(Collision collision)
     {
-        // Проверяем, касаемся ли мы земли
         if (collision.gameObject.CompareTag("Ground"))
         {
             isGrounded = true;
@@ -163,7 +152,6 @@ public class PlayerController : MonoBehaviour
 
     void OnCollisionExit(Collision collision)
     {
-        // Если мы перестаем касаться земли, устанавливаем isGrounded в false
         if (collision.gameObject.CompareTag("Ground"))
         {
             isGrounded = false;
@@ -172,7 +160,6 @@ public class PlayerController : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        // Проверка касания с землей при приземлении
         if (collision.gameObject.CompareTag("Ground"))
         {
             isGrounded = true;
